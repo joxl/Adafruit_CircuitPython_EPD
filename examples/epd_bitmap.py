@@ -52,7 +52,7 @@ display = Adafruit_IL0373(
     rst_pin=rst,
     busy_pin=busy,
 )
-''' display = Adafruit_UC8179(800, 480,         # 7.5" tricolor 800x480 display
+""" display = Adafruit_UC8179(800, 480,         # 7.5" tricolor 800x480 display
     spi,
     cs_pin=ecs,
     dc_pin=dc,
@@ -60,7 +60,7 @@ display = Adafruit_IL0373(
     rst_pin=rst,
     busy_pin=busy,
     tri_color = True
-)'''
+)"""
 
 # IF YOU HAVE A 2.13" FLEXIBLE DISPLAY OR!
 # UC8179 5.83" or 7.5" displays
