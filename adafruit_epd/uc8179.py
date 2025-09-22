@@ -162,10 +162,10 @@ class Adafruit_UC8179(Adafruit_EPD):
         # Panel setting - different for tricolor vs monochrome
         if self._tri_color:
             # Tricolor display: 0b000111 (0x07) - Tricolor OTP LUT
-            self.command(_UC8179_PANELSETTING, bytearray([0b000111]))
+            self.command(_UC8179_PANELSETTING, bytearray([0b001111]))
         else:
             # Monochrome display: 0b010111 (0x17) - BW OTP LUT
-            self.command(_UC8179_PANELSETTING, bytearray([0b010111]))
+            self.command(_UC8179_PANELSETTING, bytearray([0b011111]))
 
         # Resolution setting
         self.command(
