@@ -63,12 +63,16 @@ class Adafruit_UC8179(Adafruit_EPD):
         sramcs_pin: DigitalInOut,
         rst_pin: DigitalInOut,
         busy_pin: DigitalInOut,
+        tri_color: bool = False,
     ) -> None:
         # Adjust height to be divisible by 8 (direct from Arduino)
         if (height % 8) != 0:
             height += 8 - (height % 8)
 
         super().__init__(width, height, spi, cs_pin, dc_pin, sramcs_pin, rst_pin, busy_pin)
+
+        # Store whether this is a tricolor display
+        self._tri_color = tri_color
 
         # Calculate buffer sizes exactly as Arduino does: width * height / 8
         self._buffer1_size = width * height // 8
@@ -98,14 +102,19 @@ class Adafruit_UC8179(Adafruit_EPD):
         )
 
         # Set up which frame buffer is which color
-        self.set_black_buffer(0, True)
-        self.set_color_buffer(1, False)
+        if self._tri_color:
+            self.set_black_buffer(0, False)
+            self.set_color_buffer(1, False)
+            # Tricolor has longer refresh time
+            self.default_refresh_delay = 13  # seconds
+        else:
+            # Monochrome settings
+            self.set_black_buffer(0, True)
+            self.set_color_buffer(1, False)
+            self.default_refresh_delay = 15  # seconds
 
         # UC8179 uses single byte transactions
         self._single_byte_tx = False
-
-        # Default refresh delay (from Adafruit_EPD base class in Arduino)
-        self.default_refresh_delay = 15  # seconds
         # pylint: enable=too-many-arguments
 
     def begin(self, reset: bool = True) -> None:
@@ -150,8 +159,13 @@ class Adafruit_UC8179(Adafruit_EPD):
         time.sleep(0.1)  # 100ms delay
         self.busy_wait()
 
-        # Panel setting
-        self.command(_UC8179_PANELSETTING, bytearray([0b011111]))  # BW OTP LUT
+        # Panel setting - different for tricolor vs monochrome
+        if self._tri_color:
+            # Tricolor display: 0b000111 (0x07) - Tricolor OTP LUT
+            self.command(_UC8179_PANELSETTING, bytearray([0b001111]))
+        else:
+            # Monochrome display: 0b010111 (0x17) - BW OTP LUT
+            self.command(_UC8179_PANELSETTING, bytearray([0b011111]))
 
         # Resolution setting
         self.command(
@@ -164,8 +178,13 @@ class Adafruit_UC8179(Adafruit_EPD):
         # Dual SPI setting
         self.command(_UC8179_DUALSPI, bytearray([0x00]))
 
-        # VCOM setting
-        self.command(_UC8179_WRITE_VCOM, bytearray([0x10, 0x07]))
+        # VCOM setting - different for tricolor
+        if self._tri_color:
+            # Tricolor VCOM setting
+            self.command(_UC8179_WRITE_VCOM, bytearray([0x90, 0x07]))
+        else:
+            # Monochrome VCOM setting
+            self.command(_UC8179_WRITE_VCOM, bytearray([0x10, 0x07]))
 
         # TCON setting
         self.command(_UC8179_TCON, bytearray([0x22]))
