@@ -11,17 +11,20 @@ CircuitPython driver for Adafruit SSD1680B displays (GDEY0213B74 display module)
 """
 
 import time
-from micropython import const
+
 import adafruit_framebuf
+from micropython import const
+
 from adafruit_epd.epd import Adafruit_EPD
 
 try:
     """Needed for type annotations"""
-    # pylint: disable=unused-import
     import typing
-    from typing_extensions import Literal
+
     from busio import SPI
     from digitalio import DigitalInOut
+    from typing_extensions import Literal
+
 except ImportError:
     pass
 
