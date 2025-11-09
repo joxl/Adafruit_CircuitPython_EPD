@@ -1,21 +1,23 @@
 # SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
-import digitalio
-import busio
 import board
+import busio
+import digitalio
+
+from adafruit_epd.ek79686 import Adafruit_EK79686
 from adafruit_epd.epd import Adafruit_EPD
 from adafruit_epd.il0373 import Adafruit_IL0373
-from adafruit_epd.il91874 import Adafruit_IL91874  # pylint: disable=unused-import
-from adafruit_epd.il0398 import Adafruit_IL0398  # pylint: disable=unused-import
-from adafruit_epd.ssd1608 import Adafruit_SSD1608  # pylint: disable=unused-import
-from adafruit_epd.ssd1675 import Adafruit_SSD1675  # pylint: disable=unused-import
-from adafruit_epd.ssd1680 import Adafruit_SSD1680  # pylint: disable=unused-import
-from adafruit_epd.ssd1680b import Adafruit_SSD1680B  # pylint: disable=unused-import
-from adafruit_epd.ssd1681 import Adafruit_SSD1681  # pylint: disable=unused-import
-from adafruit_epd.uc8151d import Adafruit_UC8151D  # pylint: disable=unused-import
-from adafruit_epd.ek79686 import Adafruit_EK79686  # pylint: disable=unused-import
-
+from adafruit_epd.il0398 import Adafruit_IL0398
+from adafruit_epd.il91874 import Adafruit_IL91874
+from adafruit_epd.ssd1608 import Adafruit_SSD1608
+from adafruit_epd.ssd1675 import Adafruit_SSD1675
+from adafruit_epd.ssd1680 import Adafruit_SSD1680
+from adafruit_epd.ssd1680b import Adafruit_SSD1680B
+from adafruit_epd.ssd1681 import Adafruit_SSD1681
+from adafruit_epd.ssd1683 import Adafruit_SSD1683
+from adafruit_epd.uc8151d import Adafruit_UC8151D
+from adafruit_epd.uc8179 import Adafruit_UC8179
 
 # create the spi device and pins we will need
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -30,13 +32,17 @@ print("Creating display")
 # display = Adafruit_SSD1608(200, 200,        # 1.54" HD mono display
 # display = Adafruit_SSD1675(122, 250,        # 2.13" HD mono display
 # display = Adafruit_SSD1680(122, 250,        # 2.13" HD Tri-color display
-# display = Adafruit_SSD1680B(122, 250        # 2.13" HD (Tri-color or mono) with GDEY0213B74
+# display = Adafruit_SSD1680B(122, 250        # Newer 2.13" HD (Tri-color or mono) with GDEY0213B74
 # display = Adafruit_SSD1681(200, 200,        # 1.54" HD Tri-color display
 # display = Adafruit_IL91874(176, 264,        # 2.7" Tri-color display
 # display = Adafruit_EK79686(176, 264,        # 2.7" Tri-color display
 # display = Adafruit_IL0373(152, 152,         # 1.54" Tri-color display
 # display = Adafruit_UC8151D(128, 296,        # 2.9" mono flexible display
-# display = Adafruit_IL0373(128, 296,         # 2.9" Tri-color display
+# display = Adafruit_UC8179(648, 480,         # 5.83" mono 648x480 display
+# display = Adafruit_UC8179(800, 480,         # 7.5" mono 800x480 display
+# display = Adafruit_IL0373(128, 296,         # 2.9" Tri-color display IL0373
+# display = Adafruit_SSD1680(128, 296,        # 2.9" Tri-color display SSD1680
+# display = Adafruit_SSD1683(400, 300,        # 4.2" 300x400 Tri-Color display
 # display = Adafruit_IL0398(400, 300,         # 4.2" Tri-color display
 display = Adafruit_IL0373(
     104,
@@ -48,8 +54,19 @@ display = Adafruit_IL0373(
     rst_pin=rst,
     busy_pin=busy,
 )
+""" display = Adafruit_UC8179(800, 480,         # 7.5" tricolor 800x480 display
+    spi,
+    cs_pin=ecs,
+    dc_pin=dc,
+    sramcs_pin=srcs,
+    rst_pin=rst,
+    busy_pin=busy,
+    tri_color = True
+)"""
 
-# IF YOU HAVE A 2.13" FLEXIBLE DISPLAY uncomment these lines!
+# IF YOU HAVE A 2.13" FLEXIBLE DISPLAY OR!
+# UC8179 5.83" or 7.5" displays
+# uncomment these lines!
 # display.set_black_buffer(1, False)
 # display.set_color_buffer(1, False)
 
@@ -76,9 +93,9 @@ class BMPError(Exception):
     pass
 
 
-def display_bitmap(epd, filename):  # pylint: disable=too-many-locals, too-many-branches
+def display_bitmap(epd, filename):
     try:
-        f = open(filename, "rb")  # pylint: disable=consider-using-with
+        f = open(filename, "rb")
     except OSError:
         print("Couldn't open file")
         return

@@ -8,21 +8,24 @@ https://learn.adafruit.com/adafruit-eink-display-breakouts/python-code
 
 """
 
-import digitalio
-import busio
 import board
+import busio
+import digitalio
 from PIL import Image
-from adafruit_epd.il0373 import Adafruit_IL0373
-from adafruit_epd.il91874 import Adafruit_IL91874  # pylint: disable=unused-import
-from adafruit_epd.il0398 import Adafruit_IL0398  # pylint: disable=unused-import
-from adafruit_epd.ssd1608 import Adafruit_SSD1608  # pylint: disable=unused-import
-from adafruit_epd.ssd1675 import Adafruit_SSD1675  # pylint: disable=unused-import
-from adafruit_epd.ssd1680 import Adafruit_SSD1680  # pylint: disable=unused-import
-from adafruit_epd.ssd1680b import Adafruit_SSD1680B  # pylint: disable=unused-import
-from adafruit_epd.ssd1681 import Adafruit_SSD1681  # pylint: disable=unused-import
-from adafruit_epd.uc8151d import Adafruit_UC8151D  # pylint: disable=unused-import
-from adafruit_epd.ek79686 import Adafruit_EK79686  # pylint: disable=unused-import
 
+from adafruit_epd.ek79686 import Adafruit_EK79686
+from adafruit_epd.il0373 import Adafruit_IL0373
+from adafruit_epd.il0398 import Adafruit_IL0398
+from adafruit_epd.il91874 import Adafruit_IL91874
+from adafruit_epd.jd79661 import Adafruit_JD79661
+from adafruit_epd.ssd1608 import Adafruit_SSD1608
+from adafruit_epd.ssd1675 import Adafruit_SSD1675
+from adafruit_epd.ssd1680 import Adafruit_SSD1680
+from adafruit_epd.ssd1680b import Adafruit_SSD1680B
+from adafruit_epd.ssd1681 import Adafruit_SSD1681
+from adafruit_epd.ssd1683 import Adafruit_SSD1683
+from adafruit_epd.uc8151d import Adafruit_UC8151D
+from adafruit_epd.uc8179 import Adafruit_UC8179
 
 # create the spi device and pins we will need
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -33,16 +36,21 @@ rst = digitalio.DigitalInOut(board.D27)
 busy = digitalio.DigitalInOut(board.D17)
 
 # give them all to our driver
+# display = Adafruit_JD79661(122, 150,        # 2.13" Quad-color display
 # display = Adafruit_SSD1608(200, 200,        # 1.54" HD mono display
 # display = Adafruit_SSD1675(122, 250,        # 2.13" HD mono display
 # display = Adafruit_SSD1680(122, 250,        # 2.13" HD Tri-color or mono display
-# display = Adafruit_SSD1680B(122, 250        # 2.13" HD (Tri-color or mono) with GDEY0213B74
+# display = Adafruit_SSD1680B(122, 250        # Newer 2.13" HD (Tri-color or mono) with GDEY0213B74
 # display = Adafruit_SSD1681(200, 200,        # 1.54" HD Tri-color display
 # display = Adafruit_IL91874(176, 264,        # 2.7" Tri-color display
 # display = Adafruit_EK79686(176, 264,        # 2.7" Tri-color display
 # display = Adafruit_IL0373(152, 152,         # 1.54" Tri-color display
 # display = Adafruit_UC8151D(128, 296,        # 2.9" mono flexible display
-# display = Adafruit_IL0373(128, 296,         # 2.9" Tri-color display
+# display = Adafruit_UC8179(648, 480,         # 5.83" mono 648x480 display
+# display = Adafruit_UC8179(800, 480,         # 7.5" mono 800x480 display
+# display = Adafruit_IL0373(128, 296,         # 2.9" Tri-color display IL0373
+# display = Adafruit_SSD1680(128, 296,        # 2.9" Tri-color display SSD1680
+# display = Adafruit_SSD1683(400, 300,        # 4.2" 300x400 Tri-Color display
 # display = Adafruit_IL0398(400, 300,         # 4.2" Tri-color display
 display = Adafruit_IL0373(
     104,
@@ -54,8 +62,19 @@ display = Adafruit_IL0373(
     rst_pin=rst,
     busy_pin=busy,
 )
+""" display = Adafruit_UC8179(800, 480,         # 7.5" tricolor 800x480 display
+    spi,
+    cs_pin=ecs,
+    dc_pin=dc,
+    sramcs_pin=srcs,
+    rst_pin=rst,
+    busy_pin=busy,
+    tri_color = True
+)"""
 
-# IF YOU HAVE A 2.13" FLEXIBLE DISPLAY uncomment these lines!
+# IF YOU HAVE A 2.13" FLEXIBLE DISPLAY OR!
+# UC8179 5.83" or 7.5" displays
+# uncomment these lines!
 # display.set_black_buffer(1, False)
 # display.set_color_buffer(1, False)
 
@@ -85,6 +104,38 @@ image = image.crop((x, y, x + display.width, y + display.height)).convert("RGB")
 
 # Convert to Monochrome and Add dithering
 # image = image.convert("1").convert("L")
+
+if type(display) == Adafruit_JD79661:
+    # Create a palette with the 4 colors: Black, White, Red, Yellow
+    # The palette needs 768 values (256 colors × 3 channels)
+    palette = []
+
+    # We'll map the 256 palette indices to our 4 colors
+    # 0-63: Black, 64-127: Red, 128-191: Yellow, 192-255: White
+    for i in range(256):
+        if i < 64:
+            palette.extend([0, 0, 0])  # Black
+        elif i < 128:
+            palette.extend([255, 0, 0])  # Red
+        elif i < 192:
+            palette.extend([255, 255, 0])  # Yellow
+        else:
+            palette.extend([255, 255, 255])  # White
+
+    # Create a palette image
+    palette_img = Image.new("P", (1, 1))
+    palette_img.putpalette(palette)
+
+    # Optional: Enhance colors before dithering for better results
+    # from PIL import ImageEnhance
+    # enhancer = ImageEnhance.Color(image)
+    # image = enhancer.enhance(1.5)  # Increase color saturation
+
+    # Quantize the image using Floyd-Steinberg dithering
+    image = image.quantize(palette=palette_img, dither=Image.FLOYDSTEINBERG)
+
+    # Convert back to RGB for the display driver
+    image = image.convert("RGB")
 
 # Display image.
 display.image(image)

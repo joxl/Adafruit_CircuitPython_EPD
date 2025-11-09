@@ -98,9 +98,7 @@ class Adafruit_SSD1680B(Adafruit_EPD):
         rst_pin: DigitalInOut,
         busy_pin: DigitalInOut,
     ) -> None:
-        super().__init__(
-            width, height, spi, cs_pin, dc_pin, sramcs_pin, rst_pin, busy_pin
-        )
+        super().__init__(width, height, spi, cs_pin, dc_pin, sramcs_pin, rst_pin, busy_pin)
 
         stride = width
         if stride % 8 != 0:
@@ -210,7 +208,7 @@ class Adafruit_SSD1680B(Adafruit_EPD):
             return self.command(_SSD1680B_WRITE_REDRAM, end=False)
         raise RuntimeError("RAM index must be 0 or 1")
 
-    def set_ram_address(self, x: int, y: int) -> None:
+    def set_ram_address(self, x: int, y: int) -> None:  # noqa: PLR6301, F841
         """Set the RAM address location"""
         # Set RAM X address counter
         self.command(_SSD1680B_SET_RAMXCOUNT, bytearray([x]))

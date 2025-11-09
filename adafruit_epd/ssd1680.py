@@ -10,21 +10,22 @@ CircuitPython driver for Adafruit SSD1680 display breakouts
 """
 
 import time
-from micropython import const
+
 import adafruit_framebuf
+from micropython import const
+
 from adafruit_epd.epd import Adafruit_EPD
 
 # for backwards compatibility
-from adafruit_epd.ssd1680b import (  # pylint: disable=unused-import
-    Adafruit_SSD1680B as Adafruit_SSD1680Z,
-)
+from adafruit_epd.ssd1680b import Adafruit_SSD1680B as Adafruit_SSD1680Z
 
 try:
     """Needed for type annotations"""
-    import typing  # pylint: disable=unused-import
-    from typing_extensions import Literal
+    import typing
+
     from busio import SPI
     from digitalio import DigitalInOut
+    from typing_extensions import Literal
 
 except ImportError:
     pass
@@ -86,7 +87,6 @@ _SSD1680_NOP = const(0x7F)
 class Adafruit_SSD1680(Adafruit_EPD):
     """driver class for Adafruit SSD1680 ePaper display breakouts"""
 
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         width: int,
@@ -97,11 +97,9 @@ class Adafruit_SSD1680(Adafruit_EPD):
         dc_pin: DigitalInOut,
         sramcs_pin: DigitalInOut,
         rst_pin: DigitalInOut,
-        busy_pin: DigitalInOut
+        busy_pin: DigitalInOut,
     ) -> None:
-        super().__init__(
-            width, height, spi, cs_pin, dc_pin, sramcs_pin, rst_pin, busy_pin
-        )
+        super().__init__(width, height, spi, cs_pin, dc_pin, sramcs_pin, rst_pin, busy_pin)
 
         stride = width
         if stride % 8 != 0:
@@ -159,7 +157,7 @@ class Adafruit_SSD1680(Adafruit_EPD):
         # driver output control
         self.command(
             _SSD1680_DRIVER_CONTROL,
-            bytearray([self._height - 1, (self._height - 1) >> 8, 0x00]),
+            bytearray([(self._height - 1) & 0xFF, (self._height - 1) >> 8, 0x00]),
         )
         # data entry mode
         self.command(_SSD1680_DATA_MODE, bytearray([0x03]))
@@ -169,20 +167,23 @@ class Adafruit_SSD1680(Adafruit_EPD):
         self.command(_SSD1680_GATE_VOLTAGE, bytearray([0x17]))
         self.command(_SSD1680_SOURCE_VOLTAGE, bytearray([0x41, 0x00, 0x32]))
 
+        height = self._width
+        if height % 8 != 0:
+            height += 8 - (height % 8)
         # Set ram X start/end postion
-        self.command(_SSD1680_SET_RAMXPOS, bytearray([0x01, 0x10]))
+        self.command(_SSD1680_SET_RAMXPOS, bytearray([0x00, (height // 8) - 1]))
         # Set ram Y start/end postion
         self.command(
             _SSD1680_SET_RAMYPOS,
-            bytearray([0, 0, self._height - 1, (self._height - 1) >> 8]),
+            bytearray([0x00, 0x00, (self._height - 1) & 0xFF, (self._height - 1) >> 8]),
         )
         # Set border waveform
         self.command(_SSD1680_WRITE_BORDER, bytearray([0x05]))
 
         # Set ram X count
-        self.command(_SSD1680_SET_RAMXCOUNT, bytearray([0x01]))
+        self.command(_SSD1680_SET_RAMXCOUNT, bytearray([0x00]))
         # Set ram Y count
-        self.command(_SSD1680_SET_RAMYCOUNT, bytearray([self._height - 1, 0]))
+        self.command(_SSD1680_SET_RAMYCOUNT, bytearray([0x00, 0x00]))
         self.busy_wait()
 
     def power_down(self) -> None:
@@ -208,12 +209,10 @@ class Adafruit_SSD1680(Adafruit_EPD):
             return self.command(_SSD1680_WRITE_REDRAM, end=False)
         raise RuntimeError("RAM index must be 0 or 1")
 
-    def set_ram_address(
-        self, x: int, y: int
-    ) -> None:  # pylint: disable=unused-argument, no-self-use
+    def set_ram_address(self, x: int, y: int) -> None:  # noqa: PLR6301, F841
         """Set the RAM address location, not used on this chipset but required by
         the superclass"""
         # Set RAM X address counter
-        self.command(_SSD1680_SET_RAMXCOUNT, bytearray([x + 1]))
+        self.command(_SSD1680_SET_RAMXCOUNT, bytearray([0]))
         # Set RAM Y address counter
-        self.command(_SSD1680_SET_RAMYCOUNT, bytearray([y, y >> 8]))
+        self.command(_SSD1680_SET_RAMYCOUNT, bytearray([0, 0]))
